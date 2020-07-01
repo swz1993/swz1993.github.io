@@ -1,0 +1,495 @@
+HashMap是基于哈希表的Map接口的实现，允许null值和null键。 HashMap是不同步的而且不保证Map的顺序。HashMap的实例有两个影响其性能的参数：初始容量(capacity)和加载因子。初始容量是哈希表中的桶数，初始容量只是创建哈希表时的容量。加载因子衡量哈希表在其容量自动增加之前可以获得多长。 当哈希表中的条目数超过加载因子和当前容量的乘积时，哈希表会rehash(即重建内部数据结构），以便哈希表k扩容大约两倍的桶量。
+
+一般来说，默认加载因子是0.75。这是在时间和空间成本之间找打一个折衷的办法。因为较高的值会减少空间开销，但会增加查找成本（在HashMap类的大多数操作中，如get和put操作)。 在设置其初始容量时，应考虑映射中的预期条目数及其负载因子，以便最大化的减少rehash的次数。 如果初始容量大于最大条目数除以加载因子，则不会发生rehash操作。
+
+## HashMap定义及说明
+
+按照惯例，先看定义：
+
+```
+public class HashMap<K,V> extends AbstractMap<K,V>
+    implements Map<K,V>, Cloneable, Serializable {}
+```
+
+先分析一下定义：
+
+1、继承了AbstractMap，实现了Map接口。即可以有Map基本的操作。还通过AbstractMap默认实现了部分方法。
+
+2、实现了Cloneable，即支持clone。
+
+3、实现了Serializable，即支持序列化和反序列化。
+
+接下来，再看看构造方法：
+
+```
+
+//数组的最大长度
+static final int MAXIMUM_CAPACITY = 1 << 30;
+//默认加载因子
+static final float DEFAULT_LOAD_FACTOR = 0.75f;
+
+//使用指定的初始容量和加载因子构造一个空的HashMap
+public HashMap(int initialCapacity, float loadFactor) {
+        //指定的初始容量不能小于0
+        if (initialCapacity < 0)
+            throw new IllegalArgumentException("Illegal initial capacity: " +
+                                               initialCapacity);
+        //使用的初始容量不能大于1*2^30
+        if (initialCapacity > MAXIMUM_CAPACITY)
+            initialCapacity = MAXIMUM_CAPACITY;
+        //加载因子不能小于等于0或者是非数字的值(无穷大或无穷小等)
+        if (loadFactor <= 0 || Float.isNaN(loadFactor))
+            throw new IllegalArgumentException("Illegal load factor: " +
+                                               loadFactor);
+        //给初始容量和加载因子赋初值
+        this.loadFactor = loadFactor;
+        this.threshold = tableSizeFor(initialCapacity);
+}
+
+//通过补位使任意整数转化为2的次方
+static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+
+//使用指定的初始容量和默认加载因子（0.75）构造一个空的HashMap
+ public HashMap(int initialCapacity){
+       this(initialCapacity, DEFAULT_LOAD_FACTOR); 
+}
+
+//使用默认初始容量（16）和默认加载因子（0.75）构造一个空的HashMap
+public HashMap(){
+//初始化默认加载因子
+   this.loadFactor = DEFAULT_LOAD_FACTOR;
+}
+
+//使用与指定Map相同的映射构造一个新的HashMap。 使用默认加载因子（0.75）和足以在指定的Map 中保存映射的初始容量创建HashMap。
+public HashMap(Map<? extends K, ? extends V> m) {
+
+
+}
+
+```
+
+从第一个构造函数中我们可以看到对初始容量和加载因子的限定。初始容量不能大于2^30且必须是2的幂。加载因子必须大于0且小余无穷大。了解了这些后，我们去看看HashMap是怎么工作的。
+
+## HashMap的源码简析
+
+初始化了一个Map之后，我们一般会往Map中添加元素，那么，就去put()方法中看一下。不过，在看源码之前，我们先了解一些概念，以便理解源码
+
+### 准备工作(哈希表)
+
+#### hashcode
+
+假如我们需要一个存储键值对的容器，我们会这怎样去构建它？比如创建一个数组，用数组来存储？但是如果我们想从中取出某个对象呢？那我们就的去遍历这个数组，看看是否有对应的键。这么做的效率是很低的，那么，有没有一种方式可以把所有类型的值都转化为整数，这样，我们就可以根据索引来存取值了。
+
+我们知道，object是所有类的基类，而Object中提供了hashcode方法来获取一个对象的hashcode值。通过这个方法，可以返回一个32位的整数。这样，我们就有了一个整数值来做索引了。但是，用这么大的值来做索引明显不可行。那么怎么办呢？我们有没有什么办法可以缩小这个值吗？
+
+#### 除留余数法
+
+除留余数法为最常用的构造散列函数方法，假如有一个初始长度为m的数组，我们要根据某个对象的hashcode计算出一个0～m-1的整数，用来将它放入数组中，则计算公式为：
+
+```
+f(key) = key mod p (p ≤ m)
+```
+
+其中，mod为取模(求余数)的意思(即取hashcode%m)。这样，我们就将一个大的整数转化为一个数组可以接受的数字。但是，这么算的话，会出现很多hashcode值不同，但是结果相同的情况，即哈希碰撞。处理碰撞有两种常用的方式：开放地址法和链地址法。
+
+#### 开放地址法(线性探测法)
+
+开放地址法，就是如果发生了冲突，就去寻找下一个空的散列地址。只要表足够大，总是能找到的。
+
+公式为：
+
+```
+fi(key)=(f(key)+di) MOD m (di=1,2,…,k(k<=m-1))
+```
+这种做法具体是指当冲突发生的时候，使用某种探测技术在散列表上形成一个探测序列。然后沿着这个序列查找指定的键值对代表的地址。如果找到了指定的键值对代表的地址，且当前地址单元为空，则将此键值对存进去。如果当前地址内有值，则去找一个地址单元为空的地址，将键值对存进去。如果之后的所有地址单元都不为空，则再从头开始找，直到找到一个空的地址单元，并存入键值对。
+
+由此可见，我们的数组长度的要大于元素个数。这样才能减少碰撞。
+
+#### 链地址法(拉链法)
+
+上面的方法是，如果有冲突，即发生了碰撞，就去找其他的地址单元为空的地址。可是，为什么发生了碰撞就要离开，大家都是那个值，一起待着不行么？
+
+可以呀，用链地址法。就是用一个数组，数组中的每个元素都指向一个链表。每当有散列值为该元素的索引的键值对进来，就将其存入链表中。这种方法的思想就是数组要选的足够大，以保证所有的链表要尽可能的短，以保证高效的查找。HashhMap就是用的这个方法
+
+### 开始分析源码
+
+好了，了解了那些知识点后，我们从put()方法及其相关方法下手，源码如下：
+
+```
+//将指定的值与此映射中的指定键相关联。 如果映射先前包含键的映射，则替换旧值。
+public V put(K key, V value) {
+        return putVal(hash(key), key, value, false, true);
+    }
+
+//计算key的哈希值
+static final int hash(Object key) {
+        int h;
+        //混淆hashCode，减少插入hashMap时的hash冲突(用高16位于低16位做异或运算)
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+
+//该表在首次使用时初始化，并根据需要调整大小。 分配时，长度始终是2的幂。某些操作中，允许为0
+transient Node<K,V>[] table;
+
+//将链表转为红黑树的阈值，当链表节点个大于等于TREEIFY_THRESHOLD - 1时，会将该链表换成红黑树
+static final int TREEIFY_THRESHOLD = 8;
+
+//数组的阈值
+int threshold;
+
+//将数据填入HashMap中
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        //tab：内部数组；p：hash对应的索引位中的第一个节点；n：内部数组的长度；i：hash对应的索引位
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        //判断是否初始化
+        if ((tab = table) == null || (n = tab.length) == 0)
+        //tab为初始值，则初始化数组大小
+            n = (tab = resize()).length;
+        //计算数组索引，并判断该索引下第一个节点的元素是否为null
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            //如果该索引下第一个节点为null，则添加一个新的节点
+            tab[i] = newNode(hash, key, value, null);
+        else {
+            //该索引下第一个节点不为null
+            Node<K,V> e; K k;
+			//判断该索引下第一个元素的key值是否与要添加的元素相同
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                //相同则将p赋值给e
+                e = p;
+            //如果该索引下第一个元素的key值与要添加的元素不相同，判断p是不是一个红黑树结构
+            else if (p instanceof TreeNode)
+               //如果p是红黑树结构，则将要插入的元素添加到数组里面，并赋值给e
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else {
+                //如果p不是红黑树结构，则遍历此索引下的节点
+                for (int binCount = 0; ; ++binCount) {
+                    //如果某个节点的下个节点为null
+                    if ((e = p.next) == null) {
+                        //将新的元素赋予下个节点
+                        p.next = newNode(hash, key, value, null);
+                        //如果以遍历的节点的个数大于等于8-1=7
+                        if (binCount >= TREEIFY_THRESHOLD - 1)
+                            //尝试将次链表转为红黑树
+                            treeifyBin(tab, hash);
+                        //结束循环
+                        break;
+                    }
+                    //如果某个位置的元素跟新元素的key相同
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        //结束循环
+                        break;
+                    //将当前循环位置的节点值赋予p，并开始下次循环
+                    p = e;
+                }
+            }
+            //如果循环结束，且e被赋值
+            if (e != null) { 
+                //获取e的value
+                V oldValue = e.value;
+                //如果e节点的value为null或者可以用新值覆盖旧值
+                if (!onlyIfAbsent || oldValue == null)
+                    //用新的value覆盖e节点的value
+                    e.value = value;
+                afterNodeAccess(e);
+                //返回value值
+                return oldValue;
+            }
+        }
+        //修改次数加一
+        ++modCount;
+        //判断当前的数组长度是否大于阈值
+        if (++size > threshold)
+            //加倍数组大小
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+    }
+
+//数组的最大长度
+static final int MAXIMUM_CAPACITY = 1 << 30;
+//最大阈值
+public static final int   MAX_VALUE = 0x7fffffff;
+//默认初始容量，必须是2的幂
+static final int DEFAULT_INITIAL_CAPACITY = 1 << 4（16）
+
+//初始化或加倍数组大小
+final Node<K,V>[] resize() {
+        Node<K,V>[] oldTab = table;
+        
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        int oldThr = threshold;
+        int newCap, newThr = 0;
+        if (oldCap > 0) {
+            //如果数组长度到达最大值，则直接返回
+            if (oldCap >= MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
+                return oldTab;
+            }
+            //如果旧的数组长度*2小于最大数组长度，且旧的数组长度大于等于默认数组长度
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                     oldCap >= DEFAULT_INITIAL_CAPACITY)
+                //将容量扩充一倍
+                newThr = oldThr << 1;
+        }
+        //如果数组长度等于0，但是threshold大于0(带参构造设置)，则将threshold置为数组长度
+        else if (oldThr > 0) 
+            newCap = oldThr;
+        else {
+            //否则，使用默认的数组长度及加载因子，并计算数组容量              
+            newCap = DEFAULT_INITIAL_CAPACITY;
+            newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+        }
+        //如果数组容量为0，可能上面oldThr << 1移除了最高位
+        if (newThr == 0) {
+            //重新计算数组容量
+            float ft = (float)newCap * loadFactor;
+            newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                      (int)ft : Integer.MAX_VALUE);
+        }
+        //将计算好的数组容量赋值给threshold
+        threshold = newThr;
+        @SuppressWarnings({"rawtypes","unchecked"})
+            //用计算好数组长度新建一个Node
+            Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+        //将新建好的Node赋于table
+        table = newTab;
+        //如果table之前已被使用
+        if (oldTab != null) {
+            //遍历数组
+            for (int j = 0; j < oldCap; ++j) {
+                Node<K,V> e;
+                //取出索引下的第一个节点，并判断是否为null
+                if ((e = oldTab[j]) != null) {
+                    oldTab[j] = null;
+                    //如果此链表只有一个节点，则将此元素存入(要重新计算索引)
+                    if (e.next == null)
+                        newTab[e.hash & (newCap - 1)] = e;
+                    //如果是红黑树的结构
+                    else if (e instanceof TreeNode)
+                        //调整大小
+                        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                    else { 
+                        //loHead，loTail为原链表的节点
+                        Node<K,V> loHead = null, loTail = null;
+                        // hiHeadm, hiTail为新链表节点
+                        Node<K,V> hiHead = null, hiTail = null;
+                        Node<K,V> next;
+                        //如果此链表有多个节点，则遍历节点
+                        do {
+                            //获取下个节点的元素
+                            next = e.next;
+							//新增bit为0的节点，存入原链表
+                            if ((e.hash & oldCap) == 0) {
+                                if (loTail == null)
+                                    loHead = e;
+                                else
+                                    loTail.next = e;
+                                loTail = e;
+                            }
+							 // 新增bit为1的节点，存入新链表
+                            else {
+                                if (hiTail == null)
+                                    hiHead = e;
+                                else
+                                    hiTail.next = e;
+                                hiTail = e;
+                            }
+                        } while ((e = next) != null);
+						// 原链表存回原索引位
+                        if (loTail != null) {
+                            loTail.next = null;
+                            newTab[j] = loHead;
+                        }
+						//新链表存入：原链表+索引长度
+                        if (hiTail != null) {
+                            hiTail.next = null;
+                            newTab[j + oldCap] = hiHead;
+                        }
+                    }
+                }
+            }
+        }
+        return newTab;
+    }
+
+//单向链表结构，属性包括当前位置的元素的key和value，及其后面元素位置的指针。还有此位置元素的hash值。
+static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+
+        Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+     // key的hashCode异或value的hashCode
+    public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
+
+    //其他的方法
+    .........
+}
+
+//红黑树结构
+static final class TreeNode<K,V> extends LinkedHashMap.LinkedHashMapEntry<K,V> {
+        TreeNode<K,V> parent;  // red-black tree links
+        TreeNode<K,V> left;
+        TreeNode<K,V> right;
+        TreeNode<K,V> prev;    // needed to unlink next upon deletion
+        boolean red;
+        TreeNode(int hash, K key, V val, Node<K,V> next) {
+            super(hash, key, val, next);
+        }
+       //其他方法
+    .....................
+
+//最小树形化的容量，即：当内部数组长度小于64时，不会将链表转化成红黑树，而是优先扩充数组
+static final int MIN_TREEIFY_CAPACITY = 64;
+
+//对于给定的散列unles表，在索引处替换bin中的所有链接节点太小，在这种情况下调整大小。
+final void treeifyBin(Node<K,V>[] tab, int hash) {
+        int n, index; Node<K,V> e;
+        //如果数组为null或者数组长度小于64
+        if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+            //扩充数组
+            resize();
+          //否则，将链表转为红黑树
+        else if ((e = tab[index = (n - 1) & hash]) != null) {
+            TreeNode<K,V> hd = null, tl = null;
+            do {
+                TreeNode<K,V> p = replacementTreeNode(e, null);
+                if (tl == null)
+                    hd = p;
+                else {
+                    p.prev = tl;
+                    tl.next = p;
+                }
+                tl = p;
+            } while ((e = e.next) != null);
+            if ((tab[index] = hd) != null)
+                hd.treeify(tab);
+        }
+    }
+
+```
+好了，现在把上面分析的总结一下：
+
+1、HashMap是一个基于拉链法实现的散列表，内部由数组(用索引确定键值对的位置)和链表(存储hash值、key、value和下个节点的地址)实现。
+
+2、HashMap中的数组默认的初始容量为16，容量的增长必须以2的次方的方式扩容。且要小于1 << 30。
+
+3、加载因子的默认中是0.75。即当当前数组内的元素的个数为数组容量的0.75，则数组就会被扩充。
+
+4、HashMap中的Node是一个单链表模式的类，TreeNode是红黑树类型的类。HashMap内部数组中的元素是单链表类型的。当链表长度大于等于7的时候，单链表会判断是扩容还是转为红黑树。判断的依据是数组的长度是否大于64.而当链表的长度小于6的时候，又会将红黑树转为链表。
+
+### 源码中的其他细节
+
+1、tableSizeFor()方法做了些什么？
+
+我们再看一下这个方法：
+
+```
+static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+```
+直接看好像看不出什么，那我们就给cap赋一个值，看看在这个方法中经历了什么。比如，我们给cap赋值为10,那么10-1=9，9的二进制为"0000 0000 0000 1001"。
+
+首先，将它右移一位，在做或运算
+
+```
+  0000 0000 0000 1001
+| 0000 0000 0000 0100
+-----------------------
+  0000 0000 0000 1101
+```
+可以看到，我们最高的有效位的右边被复制出了一个1。接下来，我们再继续，将它右移两位，再做或运算：
+
+```
+  0000 0000 0000 1101
+| 0000 0000 0000 0011
+---------------------
+  0000 0000 0000 1111
+```
+
+可以看到，现在我们最高位的右边都变为1。后面还有的右移4、8和16位，由于我们的数字比较小，所以就没用了，也就不分析了。
+
+现在，我们将这个数字加1，那么它就会进位，且后面的低位全部为0。这个数就成为2的次方了。所以，经过这样的运算，我们自己传进来的数都会变为2的次方。
+
+2、hashcode是怎么转换为数组的索引的？
+
+在我们调用put方法后，我们传进来的key会进入hash方法，我们看一下在hash方法中作了什么操作：
+
+```
+static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+```
+
+主要看"(h = key.hashCode()) ^ (h >>> 16)"这一部分。这部分表示key的hashcode即h，会右移16位，然后与h做异或运算，得到一个值。这么做是为了将hashCode进一步混淆，以减少hash碰撞。而这个值就是就是索引值了么？怎么可能。在putVal()方法中，还有一步操作：
+
+```
+if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+```
+我们主要看判断语句中的"tab[i = (n - 1) & hash]"。在这里，我们生成的hash值，会和数组长度-1得到的值做一次与运算。这就是hashcode转索引的过程。我们具体看一下过程：
+
+比如我们随便定义一个hashcode，看看"(h = key.hashCode()) ^ (h >>> 16)"发生了什么:
+
+```
+h = hashcode： 1111 1111 1111 1111 1111 0011 1100 1101
+
+k = hashcode>>> 16:
+
+           0000 0000 0000 0000 1111 1111 1111 1111
+ h ^ k:
+           1111 1111 1111 1111 1111 0011 1100 1101
+        ^  0000 0000 0000 0000 1111 1111 1111 1111
+        -------------------------------------------
+           1111 1111 1111 1111 0000 1100 0011 0010       
+```
+然后，假如我们有一个初始容量为16的数组，则根据"(n - 1) & hash"的到的索引为：
+
+```
+(n - 1) & hash:
+
+          0000 0000 0000 0000 0000 0000 0000 1111
+          1111 1111 1111 1111 0000 1100 0011 0010
+          ---------------------------------------
+          0000 0000 0000 0000 0000 0000 0000 0010        
+```
+结果为：2。
+
+3、数组容量为什么一定要是2的次方式增长？
+
+通过上面分析我们发现，我们设置数组长度的初始值不管是多少，最后都会被转换为2的次方。为什么这么做呢？我们看一下设置数组角标的代码"(n - 1) & hash"，n代表数组长度，我们只有将数组长度设置为2的次方，n-1的低位才能都是1。这样，在与计算的时候，才能保证值所生成的hashCode的低位每一位都能被使用，提高空间的利用率。到这不理解没关系(其实是我嘴笨，上面说的我自己也觉得绕)，举个反例就明白了(我们只考虑最低的四位)：
+
+假如，数组长度不是2的次方，比如10.那么10-1=9。9的二进制位1001。那么，与任何值做与运算，中间的两位都是0。也就是说，他们所代表的值永远不会被使用。是不是很浪费？这就是原因了。
+
+好，到这，这篇文章就结束了。休息了，要出去浪一回。
+
+
+
+

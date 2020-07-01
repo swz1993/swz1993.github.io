@@ -1,0 +1,308 @@
+本篇分析TreeMap。
+
+## TreeMap的定义及说明
+
+定义如下：
+
+```
+public class TreeMap<K,V>
+    extends AbstractMap<K,V>
+    implements NavigableMap<K,V>, Cloneable, java.io.Serializable{}p
+```
+
+1、继承了AbstractMap及实现了NavigableMap接口。我们从集合框架那一篇文章中已经知道NavigableMap是一个扩展了SortedMap接口的接口。而SortedMap接口主要提供有序的Map实现。所以TreeMap是一个**有序**的Map。
+
+2、实现了Cloneable，即支持clone。
+
+3、实现了java.io.Serializable，即支持序列化和反序列化。
+
+TreeMap是基于红黑树的实现的。根据其键的可比较的自然顺序，或者创建时提供的Comparator进行排序，具体取决于使用的构造函数。
+
+接下来看构造方法：
+
+```
+//比较器，用于维护TreeMap中映射的顺序，如果它使用其键的自然顺序，则为null。
+private final Comparator<? super K> comparator;
+
+//构造一个根据键的自然顺序排序的TreeMap
+public TreeMap() {
+        //比较器为null
+        comparator = null;
+    }
+    
+//构造空的，给定比较器的TreeMap
+public TreeMap(Comparator<? super K> comparator) {
+        //使用指定的比较器
+        this.comparator = comparator;
+    }
+
+//构造一个与给定映射相同的TreeMap，根据其键的自然顺序进行排序
+public TreeMap(Map<? extends K, ? extends V> m) {
+        comparator = null;
+        //将指定映射中的所有映射复制到此TreeMap。这些映射将替换TreeMap中对当前位于指定映射中的任何键的任何映射
+        putAll(m);
+    }
+
+//构造一个与m具有相同元素和元素顺序的TreeMap
+public TreeMap(SortedMap<K, ? extends V> m) {
+        //返回用于对m中的键进行排序的比较器
+        comparator = m.comparator();
+        try {
+           
+             //使用线性时间算法来自排序数据
+             buildFromSorted(m.size(),m.entrySet().iterator(), null, null);
+        } catch (java.io.IOException cannotHappen) {
+        } catch (ClassNotFoundException cannotHappen) {
+        }
+    }
+```
+
+从构造函数中我们知道，如果我们没有指定比较器，则使用键的自然顺序排序。
+
+## TreeMap源码简析
+
+按照惯例，去看给TreeMap赋值的put()方法:
+
+```
+//比较器
+private final Comparator<? super K> comparator;
+
+//红黑树的根节点
+private transient TreeMapEntry<K,V> root;
+
+//TreeMap的大小
+private transient int size = 0;
+
+//TreeMap修改次数
+private transient int modCount = 0;
+
+public V put(K key, V value) {
+        //将根节点的值赋予t
+        TreeMapEntry<K,V> t = root;
+        //判断根节点是否为null
+        if (t == null) {
+            //根节点为null，判断比较器是否为null
+            if (comparator != null) {
+                //比较器为null，判断key是否为null
+                if (key == null) {
+                    //检查输入null值的副作用
+                    comparator.compare(key, key);
+                }
+            } else {
+                //如果比较器不为null，判断key是否为null
+                if (key == null) {
+                    //key为null，抛出异常
+                    throw new NullPointerException("key == null");
+                } else if (!(key instanceof Comparable)) {
+                //comparator为null，key不为null，但是key对象没有实现Comparable接口，则抛出异常
+                    throw new ClassCastException(
+                            "Cannot cast" + key.getClass().getName() + " to Comparable.");
+                }
+            }
+            //将此元素作为根节点
+            root = new TreeMapEntry<>(key, value, null);
+            
+            size = 1;
+            modCount++;
+            return null;
+        }
+        
+        //如果存在根节点，执行以下操作
+        //key与某个节点的key所比较的值
+        int cmp;
+        //与key相比较的某个节点
+        TreeMapEntry<K,V> parent;
+        //获取比较器将其赋值与cpr 
+        Comparator<? super K> cpr = comparator;
+        //判断比较器是否为null
+        if (cpr != null) {
+            //比较器不为null，执行循环
+            do {
+                //将t的值赋予parent(第一次循环为root)
+                parent = t;
+                //使用比较器比较要插入的key跟当前节点的key
+                cmp = cpr.compare(key, t.key);
+                //如果key小则将t的值置为当前节点左孩子的值
+                if (cmp < 0)
+                    t = t.left;
+                //如果key大则将t的值置为当前节点右孩子的值
+                else if (cmp > 0)
+                    t = t.right;
+                else
+                    //如果key值相同，则覆盖当前节点的值
+                    return t.setValue(value);
+            } while (t != null);
+        }
+        else {
+            //如果比较器为null，判断key是否为null
+            if (key == null)
+                //key为null，则抛出异常
+                throw new NullPointerException();
+            @SuppressWarnings("unchecked")
+            //此处注意，key需为实现了Comparable的对象，不然会抛出ClassCastException。
+                Comparable<? super K> k = (Comparable<? super K>) key;
+            //执行循环    
+            do {
+                //将t的值赋予parent(第一次循环为root)
+                parent = t;
+                //将key与当前节点的key做比较
+                cmp = k.compareTo(t.key);
+                if (cmp < 0)
+                //如果key小则将t的值置为当前节点左孩子的值
+                    t = t.left;
+                else if (cmp > 0)
+                //如果key大则将t的值置为当前节点右孩子的值
+                    t = t.right;
+                else
+                //如果key值相同，则覆盖当前节点的值
+                    return t.setValue(value);
+            } while (t != null);
+        }
+        //设置一个新的节点
+        TreeMapEntry<K,V> e = new TreeMapEntry<>(key, value, parent);
+        //如果key比当前节点的key值小
+        if (cmp < 0)
+            //将新元素作为当前节点的左孩子
+            parent.left = e;
+        else
+            //否则，将新元素作为当前节点的右孩子
+            parent.right = e;
+        //插入修正，以保证插入新元素后还是红黑树结构    
+        fixAfterInsertion(e);
+        size++;
+        modCount++;
+        return null;
+    }
+
+//红黑树结构
+static final class TreeMapEntry<K,V> implements Map.Entry<K,V> {
+       
+        //key值
+        K key;
+        
+        //value值
+        V value;
+        
+        //左孩子
+        TreeMapEntry<K,V> left;
+        
+        //右孩子
+        TreeMapEntry<K,V> right;
+        
+        //父节点
+        TreeMapEntry<K,V> parent;
+        
+        //节点颜色
+        boolean color = BLACK;
+
+        //初始化
+        TreeMapEntry(K key, V value, TreeMapEntry<K,V> parent) {
+            this.key = key;
+            this.value = value;
+            this.parent = parent;
+        }
+
+        //其他方法
+        ..........
+    }
+```
+
+通过上面的分析，我们发现TreeMap其实是通过操作TreeMapEntry类型的root属性，以实现对数据的插入。也就是说，对TreeMap的操作其实是通过对红黑树的操作来完成的。
+
+接下来，我们再分析一些其他的方法：
+
+### 对TreeMapEntry的操作
+
+对TreeMap的操作的方法有firstEntry()、lastEntry()、pollFirstEntry()、pollLastEntry()、lowerEntry()、floorEntry()、ceilingEntry()、higherEntry()。它们的都是通过对树的遍历找到并操作指定的节点。比如firstEntry()：
+
+```
+//获取第一个节点的值
+public Map.Entry<K,V> firstEntry() {
+        return exportEntry(getFirstEntry());
+    }
+
+//获取第一个节点的值     
+final TreeMapEntry<K,V> getFirstEntry() {
+        //遍历树的左节点，获取第一个节点的值
+        TreeMapEntry<K,V> p = root;
+        if (p != null)
+            while (p.left != null)
+                p = p.left;
+        return p;
+    }
+
+//返回一个AbstractMap.SimpleImmutableEntry
+static <K,V> Map.Entry<K,V> exportEntry(TreeMapEntry<K,V> e) {
+        return (e == null) ? null :
+            new AbstractMap.SimpleImmutableEntry<>(e);
+    }
+
+//给key和value赋值
+public SimpleImmutableEntry(Entry<? extends K, ? extends V> entry) {
+            this.key   = entry.getKey();
+            this.value = entry.getValue();
+        }    
+```
+
+在上面的分析中，我们发现一个陌生的类，AbstractMap.SimpleImmutableEntry。这个类是为了使键和值不可变，该类不支持setValue()方法。这么做是为了防止我们修改返回的Entry。
+
+### 对key操作的相关方法
+
+对key操作的方法有firstKey()、lastKey()、lowerKey()、floorKey()、ceilingKey()、higherKey()，我们看一下firstKey()方法：
+
+```
+public K firstKey() {
+        return key(getFirstEntry());
+    }
+    
+ static <K> K key(TreeMapEntry<K,?> e) {
+        if (e==null)
+            throw new NoSuchElementException();
+        return e.key;
+    }   
+
+```
+
+即通过获取节点的TreeMapEntry对象来获取其对应的key。
+
+### 对value操作的相关方法
+
+对value操作的方法有containsValue()、get()、values()等，我们看一下get()方法：
+
+```
+ public V get(Object key) {
+        //获取拥有指定的key的节点
+        TreeMapEntry<K,V> p = getEntry(key); 
+         //返回值
+        return (p==null ? null : p.value);
+    }
+    
+final TreeMapEntry<K,V> getEntry(Object key) {
+        //判断比较器是否为空
+        if (comparator != null)
+            return getEntryUsingComparator(key);
+        //判断key是否为null    
+        if (key == null)
+            throw new NullPointerException();
+        @SuppressWarnings("unchecked")
+        //强制转换获取key的比较器
+            Comparable<? super K> k = (Comparable<? super K>) key;
+        //将root的值赋予t    
+        TreeMapEntry<K,V> p = root;
+        //遍历树并获取拥有指定key的节点，没有返回null
+        while (p != null) {
+            int cmp = k.compareTo(p.key);
+            if (cmp < 0)
+                p = p.left;
+            else if (cmp > 0)
+                p = p.right;
+            else
+                return p;
+        }
+        return null;
+    }    
+```
+
+我们可以看到，其实还是通过对树的遍历获取指定的节点，再获取指定的值。
+
+好了，本篇文章就分析到这，后期看看是否有补充。
