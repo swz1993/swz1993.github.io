@@ -14,6 +14,13 @@ sass:
   sass_dir: _sass
 
 permalink: /posts/:title/
+
+yaml
+remote_theme: thelehhman/texture
+
+yaml
+theme: texture
+
 texture:
   title: Adam Denisov
   tagline: Developer. Designer
