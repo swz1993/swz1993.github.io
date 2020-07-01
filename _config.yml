@@ -1,10 +1,7 @@
-title: Texture Theme
-author: GitHub User
-email: your-email@domain.com
-description: > # this means to ignore newlines until "show_exerpts:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+title: 石伟智
+author: swz1993
+email: 18735108404@163.com
+description: > 个人博客
 show_excerpts: true # set to true to show excerpts on the homepage
 baseurl: /texture
 
@@ -15,10 +12,7 @@ sass:
 
 permalink: /posts/:title/
 
-yaml
 remote_theme: thelehhman/texture
-
-yaml
 theme: texture
 
 texture:
@@ -28,6 +22,7 @@ texture:
   style: black
   showNav: false
   showPicker: true
+  showNav: true
 
   # generate social links in footer
   social_links:
