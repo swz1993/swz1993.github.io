@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Java集合(六) -- WeakhashMap"
-date:   2018-05-23 21:03:36 +0530
+date:   2018-05-29 21:03:36 +0530
 description: WeakhashMap
 ---
 WeakHashMap是一个带有弱键的Map，即当某个键不再正常使用的时候，这个键就会被移除，它所对应的键值对也就被移除了。该类支持空键和空值，具有与HashMap相似的性能特征，有与初始容量和负载因子。WeakHashMap是非同步的。
