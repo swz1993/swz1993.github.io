@@ -102,7 +102,7 @@ List是一个有序集合。该接口的用户可以精确控制列表中每个�
 
 因为继承于Collection接口，所以包含有其定义的所有方法，并且新增了部分方法，新增的API如下：
 
-```
+```java
 E get(int index);
 
 E set(int index, E element);
@@ -126,7 +126,7 @@ List<E> subList(int fromIndex, int toIndex);
 
 及默认方法
 
-```
+```java
 default void replaceAll(UnaryOperator<E> operator) {...}
 
 default void sort(Comparator<? super E> c) {...}
@@ -147,7 +147,7 @@ default void sort(Comparator<? super E> c) {...}
 
 Set也是继承于Collection的一个接口，我们看一下它的定义：
 
-```
+```java
 public interface Set<E> extends Collection<E> {}
 
 ```
@@ -156,7 +156,7 @@ Set是一个不包含重复元素的集合。 集合中任意两个元素 e1.equ
 
 和List一样，Set也含有Collection定义的所有方法，但是没有新增方法，只重写了一个默认方法：
 
-```
+```java
 //也是只改变了第二个参数
 
  @Override
@@ -169,7 +169,7 @@ Set是一个不包含重复元素的集合。 集合中任意两个元素 e1.equ
 
 定义如下：
 
-```
+```java
 public abstract class AbstractCollection<E> implements Collection<E> {}
 ```
 
@@ -177,7 +177,7 @@ AbstractCollection是一个抽象类，实现了Collection中除了iterator()和
 
 ### AbstractList的定义及作用
 
-```
+```java
 public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {}
 ```
 
@@ -185,7 +185,7 @@ AbstractList是一个抽象类，实现了List中除了size()和get(int Location
 
 ### AbstractSequentialList的定义及作用
 
-```
+```java
 public abstract class AbstractSequentialList<E> extends AbstractList<E> {}
 ```
 
@@ -195,7 +195,7 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {}
 
 定义如下：
 
-```
+```java
 public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E> {}
 ```
 
@@ -205,13 +205,13 @@ AbstractSet是一个抽象类，实现了equals(Object c)、hashCode()和removeA
 
 定义如下：
 
-```
+```java
 public interface Queue<E> extends Collection<E> {}
 ```
 
 队列，用于在处理前保持元素的集合。 除了有基本的集合操作外，队列还提供插入，提取和检查操作。它的方法有：
 
-```
+```java
 //如果可以在不违反容量限制的情况下立即执行此操作，则将指定的元素插入此队列，成功时返回{@code true}，如果当前没有空间，则抛出{@code IllegalStateException}
 boolean add(E e);
 
@@ -235,13 +235,13 @@ E peek();
 
 定义如下：
 
-```
+```java
 public interface Deque<E> extends Queue<E> {}
 ```
 
 Deque是一种线性集合，支持两端插入和移除元素。此接口支持限制容量大小的队列以及不限制容量大小的队列。除了Queue的方法外，还有以下方法
 
-```
+```java
 //容量允许的情况下，在队列的开头插入元素。如果没有空间，则抛出IllegalStateException异常。
 void addFirst(E e);
 
@@ -331,7 +331,7 @@ Iterator<E> descendingIterator();
 
 Iterator是一个泛型接口，包含4个方法：
 
-```
+```java
 public interface Iterator<E>{
 
 E next();
@@ -359,13 +359,13 @@ Iterator接口的remove方法将会删除刚刚越过的元素。而且，不能
 
 定义如下：
 
-```
+```java
 public interface ListIterator<E> extends Iterator<E> {}
 ```
 
 它继承于Iterator，用来遍历List，允许程序员在任一方向遍历列表，在迭代期间修改列表，并获取迭代器在列表中的当前位置。它没有当前元素，光标总是位于以遍历过的元素和下一个元素之间。除了Iterator的方法外，他还有自己的方法。
 
-```
+```java
 //反向遍历列表的时候，如果有元素，则返回true（光标前面是否有元素）
 boolean hasPrevious();
 
@@ -392,7 +392,7 @@ void add(E e);
 
 定义如下:
 
-```
+```java
 public interface Map<K, V> {}
 ```
 
@@ -400,7 +400,7 @@ Map是一个键值对映射接口。Map中不能包含重复的键，每个键�
 
 Map的方法：
 
-```
+```java
 int size();
 
 boolean isEmpty();
@@ -432,7 +432,7 @@ int hashCode();
 
 以及默认方法
 
-```
+```java
 default V getOrDefault(Object key, V defaultValue){}
 
 default void forEach(BiConsumer<? super K, ? super V> action){}
@@ -466,13 +466,13 @@ Map的方法用来返回键集、值集以及键跟值的映射关系。且提�
 
 定义如下：
 
-```
+```java
 interface Entry<K, V> {}
 ```
 
 这是Map内部的一个接口，辅助Map的部分方法。Entry的方法有：
 
-```
+```java
 K getKey();
 
 V getValue();
@@ -486,7 +486,7 @@ int hashCode();
 
 还有部分默认方法
 
-```
+```java
 public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K, V>> comparingByKey(){}
 
 public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K, V>> comparingByValue(){}
@@ -500,13 +500,13 @@ public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(Comparator<? s
 
 定义如下：
 
-```
+```java
 public abstract class AbstractMap<K,V> implements Map<K,V> {}
 ```
 
 此类实现了Map除entrySet()外的所有方法。内部有一个抽象类SimpleEntry继承了Entry做辅助工作。此类还有自己的方法:
 
-```
+```java
 //返回一个克隆副本，但是值跟键都是null
 protected Object clone() throws CloneNotSupportedException {}
 
@@ -518,13 +518,13 @@ private static boolean eq(Object o1, Object o2) {}
 
 定义如下：
 
-```
+```java
 public interface ConcurrentMap<K,V> extends Map<K,V> {}
 ```
 
 它的实现类可以为线程提供安全性和原子性保证。其实就是线程安全。它的方法如下：
 
-```
+```java
 V putIfAbsent(K key, V value);
 
 boolean remove(Object key, Object value);
@@ -537,7 +537,7 @@ V replace(K key, V value);
 
 还有默认方法
 
-```
+```java
 default V getOrDefault(Object key, V defaultValue){}
 
 default void forEach(BiConsumer<? super K, ? super V> action){}
@@ -565,13 +565,13 @@ ConcurrentMap提供线程安全性和原子性保证的映射。
 
 定义如下:
 
-```
+```java
 public interface SortedMap<K,V> extends Map<K,V> {}
 ```
 
 SortedMap接口主要提供有序的Map实现。它按照自然顺序或指定的比较器对键进行排序,它的实现类是TreeMap。它的方法如下：
 
-```
+```java
 Comparator<? super K> comparator();
 
 SortedMap<K,V> subMap(K fromKey, K toKey);
@@ -595,13 +595,13 @@ Set<Map.Entry<K, V>> entrySet();
 
 定义如下：
 
-```
+```java
 public interface NavigableMap<K,V> extends SortedMap<K,V> {}
 ```
 
 NavigableMap扩展了 SortedMap，具有了针对给定搜索目标返回最接近匹配项的导航方法。方法 lowerEntry、floorEntry、ceilingEntry 和 higherEntry 分别返回与小于、小于等于、大于等于、大于给定键的键关联的 Map.Entry 对象，如果不存在这样的键，则返回 null。类似地，方法 lowerKey、floorKey、ceilingKey 和 higherKey 只返回关联的键。所有这些方法是为查找条目而不是遍历条目而设计的。它的方法如下：
 
-```
+```java
 Map.Entry<K,V> lowerEntry(K key);
  
 K lowerKey(K key);
@@ -647,7 +647,7 @@ SortedMap<K,V> tailMap(K fromKey);
 
 定义如下：
 
-```
+```java
 public abstract class Dictionary<K,V> {}
 ```
 
@@ -655,7 +655,7 @@ public abstract class Dictionary<K,V> {}
 
 它的方法有：
 
-```
+```java
 //返回字典中元素的个数
 abstract public int size();
 
@@ -680,3 +680,4 @@ abstract public V remove(Object key);
 ```
 
 好了，本文就分析到这。在本文中没有注释的方法的作用，会在之后的其他文章中有所体现。
+
