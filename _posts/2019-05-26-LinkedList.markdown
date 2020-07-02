@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Java集合(三) -- LinkedList"
-date:   2018-05-23 21:03:36 +0530
+date:   2018-05-26 21:03:36 +0530
 description: LinkedList
 ---
 通过前面的分析，我们已经知道ArrayList是一个增、删慢但是改、查快的集合。今天，我们就来看一个跟它正好相反的增、删快，改、查慢的集合--LinkedList。
