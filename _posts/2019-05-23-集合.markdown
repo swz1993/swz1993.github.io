@@ -1,3 +1,8 @@
+---
+layout: post
+title:  "Hello, Jekyll"
+date:   2019-05-23 21:03:36 +0530
+---
 在开发过程中，常常需要集中存放多个数据。我们知道，数组可以实现这个功能。但是，数组的长度是固定的，无法对其进行拓展。如果我们存放的数据数量是动态变化的该怎么办？这个时候，就要用到Java的集合类了。
 
 ## 集合框架
@@ -29,14 +34,15 @@
 
 Collection接口的定义如下：
 
-```
+```java
 public interface Collection<E> extends Iterable<E> {}
 ```
+
 集合层次结构中的根接口，JDK不提供此接口的任何直接实现：它提供了更具体的子接口的实现，如Set和List。
 
 包含的API如下：
 
-```
+```java
 Iterator<E> iterator();
 
 int size();
@@ -67,11 +73,12 @@ boolean equals(Object o);
 
  int hashCode();
 ```
+
 这些方法主要就是对元素的添加、删除、比较和对集合的判空、遍历获取大小等。
 
 还有默认方法
 
-```
+```java
 default boolean removeIf(Predicate<? super E> filter) {...}
 
 //以下三个方法与Spliterator相关
@@ -87,9 +94,10 @@ default Stream<E> parallelStream() {...}
 
 List接口的定义如下：
 
-```
+```java
 public interface List<E> extends Collection<E> {}
 ```
+
 List是一个有序集合。该接口的用户可以精确控制列表中每个元素的插入位置。用户可以通过整数索引（列表中的位置）访问元素并搜索列表中的元素。
 
 因为继承于Collection接口，所以包含有其定义的所有方法，并且新增了部分方法，新增的API如下：
@@ -143,6 +151,7 @@ Set也是继承于Collection的一个接口，我们看一下它的定义：
 public interface Set<E> extends Collection<E> {}
 
 ```
+
 Set是一个不包含重复元素的集合。 集合中任意两个元素 e1.equals（e2）必为false。并且最多只包含一个null元素。 
 
 和List一样，Set也含有Collection定义的所有方法，但是没有新增方法，只重写了一个默认方法：
@@ -171,6 +180,7 @@ AbstractCollection是一个抽象类，实现了Collection中除了iterator()和
 ```
 public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {}
 ```
+
 AbstractList是一个抽象类，实现了List中除了size()和get(int Location)之外的函数。它是为了方便随机访问数据的集合（比如：AbstractSequentialList、ArrayList等）实现List。
 
 ### AbstractSequentialList的定义及作用
@@ -188,6 +198,7 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {}
 ```
 public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E> {}
 ```
+
 AbstractSet是一个抽象类，实现了equals(Object c)、hashCode()和removeAll(Collection<?> c)()方法。它是为了方便其他的类实现Set。
 
 ### Queue的定义及方法
@@ -197,6 +208,7 @@ AbstractSet是一个抽象类，实现了equals(Object c)、hashCode()和removeA
 ```
 public interface Queue<E> extends Collection<E> {}
 ```
+
 队列，用于在处理前保持元素的集合。 除了有基本的集合操作外，队列还提供插入，提取和检查操作。它的方法有：
 
 ```
@@ -226,6 +238,7 @@ E peek();
 ```
 public interface Deque<E> extends Queue<E> {}
 ```
+
 Deque是一种线性集合，支持两端插入和移除元素。此接口支持限制容量大小的队列以及不限制容量大小的队列。除了Queue的方法外，还有以下方法
 
 ```
@@ -349,6 +362,7 @@ Iterator接口的remove方法将会删除刚刚越过的元素。而且，不能
 ```
 public interface ListIterator<E> extends Iterator<E> {}
 ```
+
 它继承于Iterator，用来遍历List，允许程序员在任一方向遍历列表，在迭代期间修改列表，并获取迭代器在列表中的当前位置。它没有当前元素，光标总是位于以遍历过的元素和下一个元素之间。除了Iterator的方法外，他还有自己的方法。
 
 ```
@@ -455,6 +469,7 @@ Map的方法用来返回键集、值集以及键跟值的映射关系。且提�
 ```
 interface Entry<K, V> {}
 ```
+
 这是Map内部的一个接口，辅助Map的部分方法。Entry的方法有：
 
 ```
@@ -468,6 +483,7 @@ boolean equals(Object o);
 
 int hashCode();
 ```
+
 还有部分默认方法
 
 ```
@@ -487,6 +503,7 @@ public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(Comparator<? s
 ```
 public abstract class AbstractMap<K,V> implements Map<K,V> {}
 ```
+
 此类实现了Map除entrySet()外的所有方法。内部有一个抽象类SimpleEntry继承了Entry做辅助工作。此类还有自己的方法:
 
 ```
