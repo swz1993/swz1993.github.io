@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "集合"
+title:  "fail-fast机制"
 date:   2018-05-23 21:03:36 +0530
 description: Java集合 -- fail-fast机制
 ---
