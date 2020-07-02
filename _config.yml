@@ -30,7 +30,7 @@ defaults:
 
 texture:
   title: swz
-  tagline: Developer. Android
+  tagline: android开发日常笔记
   date_format: "%b %-d, %Y" #"%Y-%m-%d"
   style: blue
   showNav: true
