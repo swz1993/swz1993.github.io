@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "集合"
+title:  "ArrayList"
 date:   2018-05-23 21:03:36 +0530
 description: Java集合 -- ArrayList
 categories: Java
