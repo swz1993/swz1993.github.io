@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Java集合 -- EnumMap"
+title:  "Java集合(七) -- EnumMap"
 date:   2018-05-23 21:03:36 +0530
 description: EnumMap
 ---

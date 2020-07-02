@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Java集合 -- LinkedList"
+title:  "Java集合(三) -- LinkedList"
 date:   2018-05-23 21:03:36 +0530
 description: LinkedList
 ---
