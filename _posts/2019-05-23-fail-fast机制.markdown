@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "fail-fast机制"
+title:  "Java集合 -- fail-fast机制"
 date:   2018-05-23 21:03:36 +0530
-description: Java集合 -- fail-fast机制
+description: fail-fast机制
 ---
 
 上一篇文章我们分析了一些ArrayList的简单的源码，在分析的过程中，我们发现在调用add()、remove()和clear()及其同类方法时，ArrayList的modCount属性都要加1，调用clone()方法时，新的数组的modCount属性要置为0。这里就很奇怪了，这个modCount是什么？他参与了哪些与ArrayList有关的操作？把他加1的意义是什么？带着这些问题，我们开始本篇文章的内容。
