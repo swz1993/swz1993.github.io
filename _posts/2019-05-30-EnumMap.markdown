@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Java集合(七) -- EnumMap"
-date:   2018-05-23 21:03:36 +0530
+date:   2018-05-30 21:03:36 +0530
 description: EnumMap
 ---
 用于枚举类型键的专用Map实现。 TreeMap映射中的所有键必须来自创建映射时显式或隐式指定的单个枚举类型。 枚举映射在内部表示为数组。 枚举映射按其键的自然顺序（枚举常量的声明顺序）维护。 这反映在集合视图keySet()，entrySet()和values()返回的迭代器中。集合视图返回的迭代器非常一致：它们永远不会抛ConcurrentModificationException，它们可能会也可能不会显示出迭代进行过程中对映射所做的修改的而对其造成的影响。不允许使用空键，尝试插入空键将抛出NullPointerException。但是，测试是否存在空键或删除空键将正常运行，且允许空值。同大多数集合一样，EnumMap不是线程同步的。
