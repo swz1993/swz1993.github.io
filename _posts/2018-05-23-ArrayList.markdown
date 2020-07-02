@@ -3,6 +3,7 @@ layout: post
 title:  "集合"
 date:   2018-05-23 21:03:36 +0530
 description: Java集合 -- ArrayList
+categories: Java
 ---
 
 通过上一章的内容，我们简单了解了集合的框架。从本章开始，我们将开始分析集合的具体的实现类。我们先从简单的开始，比如ArrayList(这么说，ArrayList会不会不高兴？)。
